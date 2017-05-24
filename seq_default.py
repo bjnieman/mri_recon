@@ -39,7 +39,7 @@ class seq_reconstruction():
     def gen_kspace(self,imouse=0):
         rcvrelems = nonzero(self.inputAcq.rcvrmouse_mapping==imouse)[0]
         if (len(rcvrelems)==0):
-            print "Requested reconstruction for mouse %d, which is not in receiver map"%imouse, self.inputAcq.rcvrmouse_mapping
+            print("Requested reconstruction for mouse %d, which is not in receiver map"%imouse, self.inputAcq.rcvrmouse_mapping)
             raise SystemExit
         nreps = rgf.get_dict_value(self.inputAcq.method_param_dict,"PVM_NRepetitions",1)
         self.kspace = empty([len(rcvrelems),nreps*self.inputAcq.ni*self.inputAcq.nfid,self.inputAcq.nf,self.inputAcq.nro],complex)

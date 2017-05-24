@@ -10,7 +10,7 @@ def phase_drift_corr(inputAcq,petable,imouse=None,petable_arrays=('t1','t2')):
     if (inputAcq.platform!="Varian"):
         "Function phase_drift_corr only functions for Varian acquisitions..."
         raise SystemExit
-    print 'Estimating smoothed phase drift correction...'
+    print('Estimating smoothed phase drift correction...')
     #get repeated k0 grabs
     nacq = int(get_dict_value(inputAcq.param_dict,'np',1))/2
     nro = int(get_dict_value(inputAcq.param_dict,'nro',1))
@@ -23,10 +23,10 @@ def phase_drift_corr(inputAcq,petable,imouse=None,petable_arrays=('t1','t2')):
     t2_array = parse_petable_file(petable,petable_arrays[1])
     i1 = nonzero( (t1_array==0)*(t2_array==0) )[0]
     if (len(i1)<20):
-        print 'Too few k0 grabs for phase drift correction...'
+        print('Too few k0 grabs for phase drift correction...')
         return ones(len(t1_array),float)
     if (etl>1):
-        print 'Phase drift correction not ready for etl>1...'
+        print('Phase drift correction not ready for etl>1...')
         return zeros(len(t1_array),float)
     if (imouse==None):
         mouselist = range(nmice)
@@ -77,7 +77,7 @@ def get_corrected_datafids(inputAcq,fid_start,fid_end,mouse_num=0,phasecorr=None
         if (phasecorr is not None):
             fid_data = fid_data*phasecorr[mouse_num,fid_start:fid_end,newaxis] 
     if (data_error):
-        print 'Unable to retrieve all fids (%d,%d)...' % (fid_start,fid_end)
+        print('Unable to retrieve all fids (%d,%d)...' % (fid_start,fid_end))
     return fid_data
 
 
@@ -86,7 +86,7 @@ def rep_pos_corr(inputAcq,petable,imouse=None,petable_arrays=('t1','t2'),corrmat
     if (inputAcq.platform!="Varian"):
         "Function get_corrected_datafids only functions for Varian acquisitions..."
         raise SystemExit
-    print 'Estimating position shift between reps...'
+    print('Estimating position shift between reps...')
     nacq = int(get_dict_value(inputAcq.param_dict,'np',1))/2
     nro = int(get_dict_value(inputAcq.param_dict,'nro',1))
     etl = int(get_dict_value(inputAcq.param_dict,'etl',1))
@@ -100,7 +100,7 @@ def rep_pos_corr(inputAcq,petable,imouse=None,petable_arrays=('t1','t2'),corrmat
                   (t1_array%grappafov==0)*(t2_array%grappafov==0) )[0]
     noutreps = int( mode(array( collections.Counter(t1_array[i1]+nv/2-1+nv*(t2_array[i1]+nv2/2-1)).most_common() )[:,1])[0][0] )
     if (etl>1):
-        print 'Correction not ready for etl>1...'
+        print('Correction not ready for etl>1...')
         return ones(len(t1_array),float)
     if (imouse==None):
         mouselist = range(inputAcq.nmice)
@@ -134,8 +134,8 @@ def rep_pos_corr(inputAcq,petable,imouse=None,petable_arrays=('t1','t2'),corrmat
         delphase = exp(1.j*2*pi*(arange(nv2)-nv2/2)[newaxis,:]*peshifts[:,0,newaxis]/corrmat)[:,:,newaxis]* \
                    exp(1.j*2*pi*(arange(nv)-nv/2)[newaxis,:]*peshifts[:,1,newaxis]/corrmat)[:,newaxis,:]
         phasedriftcorr[j,:] = phasedriftcorr[j,:]*delphase[repind,t2_array/grappafov+nv2/2-1,t1_array/grappafov+nv/2-1]
-        print "PE2 pixel shifts (image %d): "%mouselist[j],peshifts[:,0]*float(nv2)/float(corrmat)
-        print "PE1 pixel shifts (image %d): "%mouselist[j],peshifts[:,1]*float(nv)/float(corrmat)        
+        print("PE2 pixel shifts (image %d): "%mouselist[j],peshifts[:,0]*float(nv2)/float(corrmat))
+        print("PE1 pixel shifts (image %d): "%mouselist[j],peshifts[:,1]*float(nv)/float(corrmat))
     return phasedriftcorr    
 
 

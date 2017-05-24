@@ -5,7 +5,6 @@ import numpy as N
 from numpy.fft import fftshift,fft
 from numpy.fft import fft2 as fft2d
 from numpy.fft import fftn as fftnd
-import exceptions
 
 #from LinearAlgebra import *
 import varian_read_file as vrf
@@ -15,7 +14,7 @@ from scipy.signal import medfilt
 ########################################################################################################################################################    
 #simple function to fetch parameter with a default if absent in procpar file
 
-class FatalError(exceptions.Exception):
+class FatalError(Exception):
     def __init__(self,args=None):
         self.msg = args
 
@@ -32,17 +31,17 @@ def get_dict_value(image_param_dict,key,default):
 #k-space reordering functions
 
 def centre_out_reordering(data,axis=-2):
-    print "Reordering centre-out acquisition order (axis %d)..." % axis
+    print("Reordering centre-out acquisition order (axis %d)..." % axis)
     dim_sizes=N.shape(data)
     indices=range(dim_sizes[axis]-1,0,-2)+range(0,dim_sizes[axis],2)
     reorder_data=N.take(data,indices,axis)
     return reorder_data
 
 def petable_reordering(data,axis=-2,petable_array='t1',petable_name=''):
-    print "Reordering from petable file (axis %d)..." % axis
+    print("Reordering from petable file (axis %d)..." % axis)
     dim_sizes=N.shape(data)
     enc_array = vrf.parse_petable_file(petable_name,petable_array)
-    enc_array = enc_array - minimum.reduce(enc_array) #this is used to avoid 0-N-1 vs. 1-N differences
+    enc_array = enc_array - N.minimum.reduce(enc_array) #this is used to avoid 0-N-1 vs. 1-N differences
     indices = N.zeros((dim_sizes[axis],),N.int)
     N.put(indices,enc_array,N.arange(dim_sizes[axis]))
     reorder_data=N.take(data,indices,axis)
@@ -50,7 +49,7 @@ def petable_reordering(data,axis=-2,petable_array='t1',petable_name=''):
 
 def petable_orderedpair_reordering(data,petable_arrays=('t1','t2'),petable_name='',matrix=(None,None),index_start=0,index_end=None,t1array=None,t2array=None):
     dimnums=(-2,-3) #only handles this arrangement for now, any reason to do otherwise?
-    print "Ordered pair reordering from petable file (axes %d, %d)..." % (dimnums[0],dimnums[1])
+    print("Ordered pair reordering from petable file (axes %d, %d)..." % (dimnums[0],dimnums[1]))
     dim_sizes=N.shape(data)
     if ((t1array is None) and (t2array is None)):
         enc_array_1 = vrf.parse_petable_file(petable_name,petable_arrays[0])
@@ -86,13 +85,13 @@ def petable_orderedpair_reordering(data,petable_arrays=('t1','t2'),petable_name=
 
 def fov_shift(data,pixel_shift,dimnum,large_data_flag):
     dim_sizes = data.shape
-    print "Performing FOV shift (axis %d, %f of %d pixels)..." % (dimnum,pixel_shift,dim_sizes[dimnum])
+    print("Performing FOV shift (axis %d, %f of %d pixels)..." % (dimnum,pixel_shift,dim_sizes[dimnum]))
     swapped_data=N.swapaxes(data,dimnum,-1)
     if (type(pixel_shift)!=float) and (type(pixel_shift)!=N.float64): pixel_shift=pixel_shift[0]
     if (large_data_flag):
         swap_shape = swapped_data.shape
         phase_ramp= (N.exp(-N.arange(dim_sizes[dimnum],dtype=N.float16)*comp_i*2*N.pi*pixel_shift/dim_sizes[dimnum]))
-        phase_ramp *= conjugate(phase_ramp[dim_sizes[dimnum]/2])
+        phase_ramp *= N.conjugate(phase_ramp[dim_sizes[dimnum]/2])
         for j in range(swap_shape[0]):
             swapped_data[j] = (swapped_data[j]*phase_ramp).astype(N.complex)
     else:
@@ -107,7 +106,7 @@ def fov_adjustment(rawdata,options,inputAcq,mouse_num):
     if hasattr(options,'fov_shift_ro'):
         ro_pixshift = float(options.fov_shift_ro.split(',')[mouse_num])
         if (abs(ro_pixshift)>0.1):
-            print "RO shift..."
+            print("RO shift...")
             rawdata=fov_shift(rawdata,ro_pixshift,-1,options.large_data_recon)
     #pe1 shift, by file and by user specification
     if (inputAcq.platform=="Varian"):
@@ -144,7 +143,7 @@ def fov_adjustment(rawdata,options,inputAcq,mouse_num):
 #simplest version of fetching k-space data from fid file
 
 def gen_kspace_simple(inputAcq,ircvr):
-    print "Generating simple k-space data..."
+    print("Generating simple k-space data...")
     nrcvrs = inputAcq.nrcvrs
     no_ro = inputAcq.nro
     if ((no_ro<=0) or (no_ro>inputAcq.data_shape[-1])): no_ro = inputAcq.data_shape[-1] #np
@@ -165,23 +164,23 @@ def gen_kspace_simple(inputAcq,ircvr):
         elif (inputAcq.nD==3):        
             ni_perchan = inputAcq.ni_perchan #npe2
     else:
-        print "Input format not recognized."
+        print("Input format not recognized.")
     raw_imgdata = N.zeros((nreps,ni_perchan,nf,no_ro),N.complex)
     for k in range(nreps):
         for j in range(ni_perchan):
-            print "%d / %d" % (k*ni_perchan+j,nreps*ni_perchan)
+            print("%d / %d" % (k*ni_perchan+j,nreps*ni_perchan))
             fid_start = j*nf
             fid_end = (j+1)*nf
             fid_data,data_error = inputAcq.getdatafids(fid_start,fid_end,rcvrnum=ircvr)
             if (data_error):
                 data_fraction = float(j)/float(ni_perchan)
-                print 'Error at %f%% through data set' % (100.0*data_fraction)
+                print('Error at %f%% through data set' % (100.0*data_fraction))
                 break
             raw_imgdata[k,j,:,:] = fid_data[:,-no_ro:]
     if ((inputAcq.nD==2) and (inputAcq.nslices>1)): #for interleaved slices
         raw_imgdata_sorted = N.zeros(raw_imgdata.shape,raw_imgdata.dtype)
         raw_imgdata.shape = (raw_imgdata.shape[-3]*raw_imgdata.shape[-2],raw_imgdata.shape[-1])
-        print raw_imgdata.shape
+        print(raw_imgdata.shape)
         for j in range(raw_imgdata_sorted.shape[-3]):
             raw_imgdata_sorted[...,j,:,:] = raw_imgdata[j::inputAcq.nslices,:]
         raw_imgdata = raw_imgdata_sorted
@@ -197,7 +196,7 @@ def gen_kspace_simple(inputAcq,ircvr):
 def DCartcorr(kdata,param_dict):
     (npe2,npe,nro)=kdata.shape
     img=fftshift(fftnd(fftshift(kdata)))
-    maxind = argmax(ravel(abs(img)))
+    maxind = N.argmax(N.ravel(abs(img)))
     (pe2ind,pe1ind,roind) = (maxind/(npe*nro),(maxind/nro)%npe,maxind%nro)
     direc = [1,-1][int(abs(img[pe2ind,pe1ind-1,roind])>abs(img[pe2ind,pe1ind+1,roind]))]
     delta=direc * abs(img[pe2ind,pe1ind+direc,roind]) / ( abs(img[pe2ind,pe1ind,roind]) + abs(img[pe2ind,pe1ind+direc,roind]) )
@@ -205,11 +204,11 @@ def DCartcorr(kdata,param_dict):
     direc = [1,-1][int(abs(img[pe2ind,pe1ind,roind-1])>abs(img[pe2ind,pe1ind,roind+1]))]
     delta=direc * abs(img[pe2ind,pe1ind,roind+direc]) / ( abs(img[pe2ind,pe1ind,roind]) + abs(img[pe2ind,pe1ind,roind+direc]) )
     posro = roind+delta-nro/2
-    kshift = kdata* (exp(-1.j*2*pi*pos*(arange(npe)-npe/2)/float(npe))[N.newaxis,:,N.newaxis]) * \
-                    (exp(-1.j*2*pi*posro*(arange(nro)-nro/2)/float(nro))[N.newaxis,N.newaxis,:])
+    kshift = kdata* (N.exp(-1.j*2*N.pi*pos*(N.arange(npe)-npe/2)/float(npe))[N.newaxis,:,N.newaxis]) * \
+                    (N.exp(-1.j*2*N.pi*posro*(N.arange(nro)-nro/2)/float(nro))[N.newaxis,N.newaxis,:])
     imgshift = fftshift(fftnd(fftshift(kshift)))
     dcoff = (imgshift[npe2/2,npe/2,nro/2]-0.5*(imgshift[npe2/2,npe/2-1,nro/2]+imgshift[npe2/2,npe/2+1,nro/2]))/(nro*npe*npe2)
-    kdatacorr = -1.0*dcoff*exp(1.j*2*pi*pos*(arange(npe)-npe/2)/float(npe))[:,N.newaxis]*exp(1.j*2*pi*posro*(arange(nro)-nro/2)/float(nro))[N.newaxis,:]
+    kdatacorr = -1.0*dcoff*N.exp(1.j*2*N.pi*pos*(N.arange(npe)-npe/2)/float(npe))[:,N.newaxis]*N.exp(1.j*2*N.pi*posro*(N.arange(nro)-nro/2)/float(nro))[N.newaxis,:]
     kdatacorr = kdatacorr[N.newaxis,:,:] + kdata
     return kdatacorr,dcoff
 
@@ -217,7 +216,7 @@ def DCartcorr(kdata,param_dict):
 #k-space filtering functions
 
 def fermi_ellipse_filter(rawdata,cutoff=0.98,transwidth=0.06):
-    print "Applying elliptical fermi filter..."
+    print("Applying elliptical fermi filter...")
     data_shape = N.shape(rawdata)
     nro = data_shape[-1]
     nv1 = data_shape[-2]
@@ -240,16 +239,16 @@ def fermi_ellipse_filter(rawdata,cutoff=0.98,transwidth=0.06):
     return rawdata
 
 def fermi_pecircle_filter(rawdata):
-    print "Applying circular pe fermi filter..."
+    print("Applying circular pe fermi filter...")
     cutoff = 0.98
     transwidth = 0.06
-    data_shape = shape(rawdata)
+    data_shape = N.shape(rawdata)
     nv1 = data_shape[-2]
     nv2 = data_shape[-3]
-    r_vals = sqrt( ((2.0*arange(nv2)/float(nv2)-1.0)**2.0)[:,N.newaxis] + \
-                   ((2.0*arange(nv1)/float(nv1)-1.0)**2.0)[N.newaxis,:] \
+    r_vals = N.sqrt( ((2.0*N.arange(nv2)/float(nv2)-1.0)**2.0)[:,N.newaxis] + \
+                   ((2.0*N.arange(nv1)/float(nv1)-1.0)**2.0)[N.newaxis,:] \
                  )
-    filt = 1.0/(1.0+exp(-(cutoff-r_vals)/transwidth))
+    filt = 1.0/(1.0+N.exp(-(cutoff-r_vals)/transwidth))
     if len(data_shape)==4:
         for k in range(data_shape[0]):
             rawdata[k,:,:,:] = (rawdata[k,:,:,:]*filt[:,:,N.newaxis]).astype(N.complex)
@@ -261,17 +260,17 @@ def fermi_pecircle_filter(rawdata):
 ########################################################################################################################################################    
 #FFT functions for recon
 def recon_2d_slices(rawdata):
-    print "Performing 2D FFT reconstruction..."
+    print("Performing 2D FFT reconstruction...")
     image_data = fftshift( fft2d( fftshift(rawdata,axes=(-2,-1)) ,s=None,axes=(-2,-1)),axes=(-2,-1))
     return image_data
 
 def recon_3d(rawdata):
-    print "Performing 3D FFT reconstruction..."
+    print("Performing 3D FFT reconstruction...")
     image_data = fftshift( fftnd( fftshift(rawdata,axes=(-3,-2,-1)) ,s=None,axes=(-3,-2,-1)),axes=(-3,-2,-1))
     return image_data
 
 def recon_1D_RO(rawdata):
-    print "Performing 1D FFT..."
+    print("Performing 1D FFT...")
     image_data = fftshift( fft( fftshift(rawdata,axes=(-1,)) ,axis=-1),axes=(-1,))
     return image_data
 
@@ -280,7 +279,7 @@ def recon_1D_RO(rawdata):
 
 def default_recon(seqrec):
     if seqrec.options.nofft:
-        print "No fft..."
+        print("No fft...")
         seqrec.image_data=seqrec.kspace
     elif seqrec.options.fft2d:
         seqrec.image_data=recon_2d_slices(seqrec.kspace)
@@ -293,7 +292,7 @@ def default_recon(seqrec):
             for j in range(sizes[0]):
                 seqrec.image_data[j,:,:,:] = recon_3d(seqrec.kspace[j,:,:,:]).astype(N.complex)
         elif (seqrec.options.large_data_recon):
-            print "Large data (in place) reconstruction..."
+            print("Large data (in place) reconstruction...")
             if (len(sizes)==3):
                 for j in range(sizes[-1]):
                     seqrec.kspace[:,:,j] = fftshift( fft2d( fftshift(seqrec.kspace[:,:,j]

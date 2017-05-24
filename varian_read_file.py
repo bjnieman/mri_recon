@@ -1,7 +1,6 @@
 # functions for opening, reading, closing varian fid files
 import array as A
 import os
-import exceptions
 from numpy import *
 #from struct import calcsize as sizeof
 import re
@@ -9,7 +8,7 @@ import struct
 
 program_name = 'varian_read_file.py'
 
-class FatalError(exceptions.Exception):
+class FatalError(Exception):
     def __init__(self,args=None):
         self.msg = args
 
@@ -24,9 +23,9 @@ class VarianAcquisition():
                 procpar_file = os.path.join(inputpath,procpar_file)
         try:
             if not ( os.path.exists(procpar_file) ):
-                raise FatalError, "procpar file not found..."
-        except FatalError, e:
-            print 'Error(%s):' % 'open_vnmrfid_file', e.msg
+                raise FatalError("procpar file not found...")
+        except FatalError as e:
+            print('Error(%s):' % 'open_vnmrfid_file', e.msg)
             raise SystemExit
         self.inputpath=inputpath
         param_dict,procpar_text_lines = generate_procpar_dict(procpar_file)
@@ -39,9 +38,9 @@ class VarianAcquisition():
         try:
             for j in range(self.nfid):
                 if not ( os.path.exists(fid_file_list[j]) ):
-                    raise FatalError, "fid%d file not found (%s)..."%(j,fid_file_list[j])
-        except FatalError, e:
-            print 'Error(%s):' % 'open_vnmrfid_file', e.msg
+                    raise FatalError("fid%d file not found (%s)..."%(j,fid_file_list[j]))
+        except FatalError as e:
+            print('Error(%s):' % 'open_vnmrfid_file', e.msg)
             raise SystemExit
         self.fidfilelist = [open(fid_file_list[j],'r') for j in range(self.nfid)]
         self.header_tuple = struct.unpack('>iiiiiihhi',self.fidfilelist[0].read(32)) 
@@ -59,7 +58,7 @@ class VarianAcquisition():
         self.nmice=int(get_dict_value(param_dict,'nmice',1))
         self.nrcvrs = len(re.findall('y',get_dict_value(param_dict,'rcvrs','ynnn')))
         if (self.nmice>self.nrcvrs):
-            print "propcar file specifies more mice than channels!!!"
+            print("propcar file specifies more mice than channels!!!")
             self.nmice = self.nrcvrs
         self.npe=int(get_dict_value(param_dict,'nv',1))
         self.npe2=int(get_dict_value(param_dict,'nv2',1))
@@ -111,8 +110,8 @@ class VarianAcquisition():
                 bindata.read(self.fidfilelist[filenum],npts)
                 bindata.byteswap()
             except EOFError:
-                print 'Error(%s): Missing data in file!' % program_name
-                print '        Trying to fetch %d fid in mouse %d (filenum %d, block %d, trace %d, nrcvrs %d)'%(ifid,mouse_num,filenum,startblocknum,starttracenum,nrcvrs)
+                print('Error(%s): Missing data in file!' % program_name)
+                print('        Trying to fetch %d fid in mouse %d (filenum %d, block %d, trace %d, nrcvrs %d)'%(ifid,mouse_num,filenum,startblocknum,starttracenum,nrcvrs))
                 data_error = True
                 break
             #complex_data[j*npts/2:(j+1)*npts/2]=array(bindata[0:npts:2],float16)+1.j*array(bindata[1:npts+1:2],float16)
@@ -211,9 +210,9 @@ def open_vnmrfid_file(inputpath,procpar_file=None):
             procpar_file = os.path.join(inputpath,procpar_file)
     try:
         if not ( os.path.exists(procpar_file) ):
-            raise FatalError, "procpar file not found..."
-    except FatalError, e:
-        print 'Error(%s):' % 'open_vnmrfid_file', e.msg
+            raise FatalError("procpar file not found...")
+    except FatalError as e:
+        print('Error(%s):' % 'open_vnmrfid_file', e.msg)
         raise SystemExit
     param_dict,procpar_text_lines = generate_procpar_dict(procpar_file)
     nfid = int(get_dict_value(param_dict,'nfid',1))
@@ -224,9 +223,9 @@ def open_vnmrfid_file(inputpath,procpar_file=None):
     try:
         for j in range(nfid):
             if not ( os.path.exists(fid_file_list[j]) ):
-                raise FatalError, "fid%d file not found (%s)..."%(j,fid_file_list[j])
-    except FatalError, e:
-        print 'Error(%s):' % 'open_vnmrfid_file', e.msg
+                raise FatalError("fid%d file not found (%s)..."%(j,fid_file_list[j]))
+    except FatalError as e:
+        print('Error(%s):' % 'open_vnmrfid_file', e.msg)
         raise SystemExit
     vnmrfidfilelist = [open(fid_file_list[j],'r') for j in range(nfid)]
     header_tuple = struct.unpack('>iiiiiihhi',vnmrfidfilelist[0].read(32)) 
@@ -284,8 +283,8 @@ def get_vnmr_datafids(vnmrfidfilelist,fid_start,fid_end,header_info,mouse_num=0,
             bindata.read(vnmrfidfilelist[filenum],npts)
             bindata.byteswap()
         except EOFError:
-            print 'Error(%s): Missing data in file!' % program_name
-            print '        Trying to fetch %d fid in mouse %d (filenum %d, block %d, trace %d, nrcvrs %d)'%(ifid,mouse_num,filenum,startblocknum,starttracenum,nrcvrs)
+            print('Error(%s): Missing data in file!' % program_name)
+            print('        Trying to fetch %d fid in mouse %d (filenum %d, block %d, trace %d, nrcvrs %d)'%(ifid,mouse_num,filenum,startblocknum,starttracenum,nrcvrs))
             data_error = True
             break
         #complex_data[j*npts/2:(j+1)*npts/2]=array(bindata[0:npts:2],float16)+1.j*array(bindata[1:npts+1:2],float16)

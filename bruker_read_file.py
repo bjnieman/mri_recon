@@ -1,6 +1,5 @@
 # functions for opening, reading, closing Bruker fid files
 import array as A
-import exceptions
 import os
 from numpy import *
 from struct import calcsize as sizeof
@@ -8,7 +7,7 @@ import re
 
 program_name = 'bruker_read_file.py'
 
-class FatalError(exceptions.Exception):
+class FatalError(Exception):
     def __init__(self,args=None):
         self.msg = args
 
@@ -29,13 +28,13 @@ class BrukerAcquisition():
         fid_file = os.path.join(inputpath,fid_name)
         try:
             if not ( os.path.exists(acq_file) ):
-                raise FatalError, "acqp file not found..."
+                raise FatalError("acqp file not found...")
             if not ( os.path.exists(fid_file) ):
-                raise FatalError, "fid file not found..."
+                raise FatalError("fid file not found...")
             if not ( os.path.exists(method_file) ):
-                raise FatalError, "method file not found..."
-        except FatalError, e:
-            print 'Error(%s):' % 'open_bruker_file', e.msg
+                raise FatalError("method file not found...")
+        except FatalError as e:
+            print('Error(%s):' % 'open_bruker_file', e.msg)
             raise SystemExit
         #generate bruker parameter dictionaries
         self.acq_param_dict=bruker_paramfile_to_dict(acq_file)
@@ -142,7 +141,7 @@ class BrukerAcquisition():
         #  Here, I am adding a -ve sign to the 2nd phase encode, so that the default 
         #  should handle the Bruker stock sequences properly
         self.gmatrix[2,:]*=-1
-        print self.gmatrix
+        print(self.gmatrix)
         #temporary handling of offsets
         default_hive_table=array([[-41,-41,0],[-41,41,0],[41,-40,0],[41,41,0]],float)
         if 1: #(not self.method_param_dict.has_key("MICe_ReadOffset")):
@@ -179,7 +178,7 @@ class BrukerAcquisition():
                 try:
                     bindata.read(self.fidfilehandle,2*self.nro)
                 except EOFError:
-                    print 'Error(%s): Missing data in file!' % program_name
+                    print('Error(%s): Missing data in file!' % program_name)
                     data_error = j
                     break
                 complex_data[k,j,:]=array(bindata[0:2*self.nro:2],float)+1.j*array(bindata[1:2*self.nro+1:2],float)
@@ -204,10 +203,10 @@ def bruker_paramfile_to_dict(brukerparamfile):
             words = line[3:].split('=') 
             try:
                 val = int(words[1])
-            except ValueError,e:
+            except ValueError as e:
                 try:
                     val = float(words[1])
-                except ValueError,f:
+                except ValueError as f:
                     val = words[1][:-1]
                     if (len(val)==0):
                         curr_line += 1
@@ -254,12 +253,12 @@ def bruker_paramfile_to_dict(brukerparamfile):
                             type_array = 'int'
                             for m in range(len(elems)):
                                 val = int(elems[m])
-                        except ValueError,e:
+                        except ValueError as e:
                             try:
                                 type_array = 'float'
                                 for m in range(len(elems)):
                                     val = float(elems[m])
-                            except ValueError,f:
+                            except ValueError as f:
                                 type_array = 'str'
                         if (type_array=='int'):
                             val = array([int(x) for x in elems],int)
@@ -304,11 +303,11 @@ def get_bruker_datafids(brukerfile,fid_start,fid_end,nro,datatype):
     complex_data = zeros((data_elems,),complex)
     data_error = 0
     for j in range(fid_end-fid_start):
-	bindata=A.array(datatype)
+        bindata=A.array(datatype)
         try:
             bindata.read(brukerfile,2*nro)
         except EOFError:
-            print 'Error(%s): Missing data in file!' % program_name
+            print('Error(%s): Missing data in file!' % program_name)
             data_error = j
             break
         complex_data[j*nro:(j+1)*nro]=array(bindata[0:2*nro:2],float)+comp_i*array(bindata[1:2*nro+1:2],float)

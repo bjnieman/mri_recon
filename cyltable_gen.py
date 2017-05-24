@@ -11,7 +11,6 @@ from sys import argv
 import string
 import os
 import getopt
-import exceptions
 import re
 from numpy import *
 from numpy.random import shuffle
@@ -21,7 +20,7 @@ program_name = 'cyltable_gen.py'
 
 #----------------------------------------------------------------------------
 # define program specific exception
-class FatalError(exceptions.Exception):
+class FatalError(Exception):
     def __init__(self,args=None):
         self.msg = args
 #----------------------------------------------------------------------------
@@ -470,14 +469,13 @@ and reconstruction.
     outputfile = args[-1]
     try:
         if not options.clobber and os.path.exists(outputfile):
-            raise FatalError, \
-               "The --clobber option is needed to overwrite an existing file."
+            raise FatalError("The --clobber option is needed to overwrite an existing file.")
         if (options.nf%options.etl!=0):
-            raise FatalError, "nf and etl are not compatible."
+            raise FatalError("nf and etl are not compatible.")
         matrix_pe1 = int(args[-3])
         matrix_pe2 = int(args[-2])
-    except FatalError, e:
-        print 'Error(%s):' % program_name, e.msg
+    except FatalError as e:
+        print('Error(%s):' % program_name, e.msg)
         raise SystemExit
 
     #get etl order if specified
@@ -610,11 +608,11 @@ and reconstruction.
     petable_file_output(i1,i2,nf,ntables,outputfile,linelim=[8,options.etl][options.etl>1],appendnfni=(not options.bruker))
 
     #advise user of parameters needed for scan
-    print "nf = %d"%options.nf
-    print "ni = %d"%ni
-    print "nfid = %d"%ntables
-    print "nTR = %d"%len(i2)
-    print "kspace %% = %f"%(100*len(i2)/float(matrix_pe1*matrix_pe2))
+    print("nf = %d"%options.nf)
+    print("ni = %d"%ni)
+    print("nfid = %d"%ntables)
+    print("nTR = %d"%len(i2))
+    print("kspace %% = %f"%(100*len(i2)/float(matrix_pe1*matrix_pe2)))
 
     #generate phase correction file if needed
     if ((options.output_phase_corr_file) or (options.output_phase_corr_filefull)):
@@ -624,9 +622,9 @@ and reconstruction.
             pc_i1,pc_i2 = gen_phase_corrfull(matrix_pe1,matrix_pe2,options.phase_corr_sampling,options.etl)
         nphasetables=1
         petable_file_output(pc_i1,pc_i2,options.nf,nphasetables,outputfile+'_phasecorr',linelim=options.etl,appendnfni=(not options.bruker))
-        print "phasecorr nf = %d"%options.nf
-        print "phasecorr ni = %d"%(len(pc_i2)/options.nf)
-        print "phasecorr nTR = %d"%(len(pc_i2)/options.etl)
+        print("phasecorr nf = %d"%options.nf)
+        print("phasecorr ni = %d"%(len(pc_i2)/options.nf))
+        print("phasecorr nTR = %d"%(len(pc_i2)/options.etl))
 
 
 #class options_struct:

@@ -15,7 +15,6 @@ from cyltable_gen import petable_file_output
 import string
 import os
 import getopt
-import exceptions
 import re
 from numpy import *
 from numpy.random import shuffle
@@ -54,11 +53,10 @@ if __name__ == '__main__':
     outputfile = args[-1]
     try:
         if not options.clobber and os.path.exists(outputfile):
-            raise FatalError, \
-               "The --clobber option is needed to overwrite an existing file."
+            raise FatalError("The --clobber option is needed to overwrite an existing file.")
         pefile_list = args[0:-1]
-    except FatalError, e:
-        print 'Error(%s):' % program_name, e.msg
+    except FatalError as e:
+        print('Error(%s):' % program_name, e.msg)
         raise SystemExit
 
     #i1=array((),int)

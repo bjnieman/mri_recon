@@ -11,7 +11,6 @@ from sys import path as syspath
 syspath.append('/home/bjnieman/source/vnmr')
 from varian_read_file import parse_petable_file
 import getopt
-import exceptions
 import re
 from numpy import *
 from varian_read_file import parse_petable_file
@@ -23,7 +22,7 @@ program_name = 'petable_display.py'
 
 #----------------------------------------------------------------------------
 # define program specific exception
-class FatalError(exceptions.Exception):
+class FatalError(Exception):
     def __init__(self,args=None):
         self.msg = args
 
@@ -32,11 +31,11 @@ def display_petable(inputfile,etl=False,etl_lines=False,range_tuple=None):
     #read table file
     t1list=parse_petable_file(inputfile,'t1')
     t2list=parse_petable_file(inputfile,'t2')
-    print 'petable contains %d (t1) and %d (t2) elements'%(len(t1list),len(t2list))
+    print('petable contains %d (t1) and %d (t2) elements'%(len(t1list),len(t2list)))
     if not (range_tuple is None):
         t1list=t1list[range_tuple[0]:range_tuple[1]]
         t2list=t2list[range_tuple[0]:range_tuple[1]] 
-        print '...using elements %d to %d for display'%(range_tuple[0],range_tuple[1])
+        print('...using elements %d to %d for display'%(range_tuple[0],range_tuple[1]))
     Nt1 = len(t1list)
     if (len(t2list)==0):
         nreps = Nt1/4
@@ -101,9 +100,9 @@ if __name__ == '__main__':
 
     try:
         if (len(args)<1):
-                raise FatalError, usage
-    except FatalError, e:
-        print 'Error(%s):' % program_name, e.msg
+                raise FatalError(usage)
+    except FatalError as e:
+        print('Error(%s):' % program_name, e.msg)
         raise SystemExit
 
     if (options.disprange is None):

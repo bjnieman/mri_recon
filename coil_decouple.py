@@ -75,7 +75,7 @@ def fetch_grappa4prof_data(inputAcq,petable,remove_ppeshift=True,dcplppeadj=None
         startpt = 0
         endpt = nro
         if (nro>nacq):
-            print "ERROR: nro and np appear to be set inconsistently!!!"
+            print("ERROR: nro and np appear to be set inconsistently!!!")
             endpt = nacq
     profs = fftshift(fft2(fftshift(raw_data[:,:,:,startpt:endpt],axes=(-2,-1)),axes=(-2,-1)),axes=(-2,-1))
     return profs,0.5*(startpt+endpt),delppe
@@ -132,7 +132,7 @@ def find_axis_shift(imgdata1,maskdata1,imgdata2,maskdata2,start=-10,end=10,step=
     pfit=polyfit(steps[istart:iend],C[istart:iend],2)
     bestshift=-1*pfit[1]/(2.0*pfit[0])
     if ((bestshift>end) or (bestshift<start)):
-        print "Read-out shift obtained is beyond search range..."
+        print("Read-out shift obtained is beyond search range...")
     return bestshift,polyval(pfit,bestshift)
 
 def dcpl_axis_adjustment(profs,masks,cplgrps,nom_shift=10,axis=-1):
@@ -186,7 +186,7 @@ def find_coupling_coeffs(profs,masks,cplgrps,npts_lstsq=8000):
                 cres,resid,rank,s = lstsq(A,b)
                 Cij[cgrp[j],k] = cres[0]+1.j*cres[1]
     invCij = inv(Cij)
-    print invCij
+    print(invCij)
     return invCij
 
 def output_grappa_profs(profs,dcpl_data,dcpl_profs_output_name,masks=None):
@@ -207,7 +207,7 @@ def output_grappa_profs(profs,dcpl_data,dcpl_profs_output_name,masks=None):
                 subplot(2,2,k+1); imshow(abs(profsmod[j,k,:,:]))
         c_outname = dcpl_profs_output_name[:-4]+"_%d"%j+dcpl_profs_output_name[-4:]
         savefig(c_outname)
-        print "Output decoupling profile for coil#%d to %s..."%(j,c_outname)
+        print("Output decoupling profile for coil#%d to %s..."%(j,c_outname))
     return None
 
 class decouple_info:
@@ -220,12 +220,12 @@ class decouple_info:
 
 def gen_decoupling_info(inputAcq,petable,cplgrps_string="0,2,5;1,3,4,6",
                         dcplppeadj=None,remove_ppeshift=True,dcpl_profs_output_name=None):
-    print 'Generating coil decoupling coefficients and offsets...'
+    print('Generating coil decoupling coefficients and offsets...')
     profs,rok0index,delppe = fetch_grappa4prof_data(inputAcq,petable,remove_ppeshift=remove_ppeshift,dcplppeadj=dcplppeadj)
     masks = mask_gappa4prof_data(profs.shape,inputAcq)
     cplgrps = [[int(x) for x in grpstrings.split(',')] for grpstrings in cplgrps_string.split(';')]
     if (max([max(x) for x in cplgrps])>=profs.shape[0]):
-        print "Inconsistency between grappa_coil_groupings and acquired channels..."
+        print("Inconsistency between grappa_coil_groupings and acquired channels...")
         raise SystemExit
     profs,ropos = dcpl_axis_adjustment(profs,masks,cplgrps,nom_shift=int( inputAcq.param_dict['sw']/2000.0 ),axis=-1) 
     invCij = find_coupling_coeffs(profs,masks,cplgrps)

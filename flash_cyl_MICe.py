@@ -41,7 +41,7 @@ class seq_reconstruction():
     def gen_kspace(self,imouse=0):
         rcvrelems = nonzero(self.inputAcq.rcvrmouse_mapping==imouse)[0]
         if (len(rcvrelems)==0):
-            print "Requested reconstruction for mouse %d, which is not in receiver map"%imouse, self.inputAcq.rcvrmouse_mapping
+            print("Requested reconstruction for mouse %d, which is not in receiver map"%imouse, self.inputAcq.rcvrmouse_mapping)
             raise SystemExit
         nTRs = len(parse_petable_file(self.petable_name,'t1'))
         self.inputAcq.nf = nTRs
@@ -54,7 +54,7 @@ class seq_reconstruction():
         if self.options.petable_ordered_pairs:
             self.kspace = rgf.petable_orderedpair_reordering(self.kspace,petable_arrays=('t1','t2'),petable_name=self.petable_name,\
                                                           matrix=(self.inputAcq.npe,self.inputAcq.npe2))
-            print self.kspace.shape
+            print(self.kspace.shape)
         elif self.options.petable_pe1:
             self.kspace = rgf.petable_reordering(self.kspace,axis=-2,petable_array='t1',petable_name=self.petable_name)
         elif self.options.petable_pe2:
@@ -73,7 +73,7 @@ class seq_reconstruction():
     def recon(self):
         if ((self.Pftacq==True) and (not self.options.nofft)):
             #recon centre of k-space (with apodization) and obtain normed conjugate
-            print "Partial fourier recon in the read direction..."
+            print("Partial fourier recon in the read direction...")
             nrofull = rgf.get_dict_value(self.inputAcq.method_param_dict,'PVM_Matrix',[1,1,1])[0]
             nroacq = rgf.get_dict_value(self.inputAcq.method_param_dict,'PVM_EncMatrix',[1,1,1])[0]
             filt = 1.0/(1.0+exp(-(nroacq-arange(nrofull))/self.options.apowidth))
@@ -104,12 +104,12 @@ class seq_reconstruction():
             self.image_data = self.image_data[:,0,:,:,:]+self.image_data[:,1,:,:,:]*exp(1.j*fullphaseimg)
             self.image_data.shape = (self.image_data.shape[0],1,self.image_data.shape[-3],self.image_data.shape[-2],self.image_data.shape[-1])
         if (not self.options.outputreps):
-            print "Averaging repetitions..."
+            print("Averaging repetitions...")
             self.image_data = mean(abs(self.image_data),axis=0)
                 
 #dedicated gen_kspace function proves simpler than using gen_kspace_simple
 def gen_kspace_local(inputAcq,ircvr,nTRs=None):
-    print "Reading k-space data..."
+    print("Reading k-space data...")
     nrcvrs = inputAcq.nrcvrs
     no_ro = inputAcq.nro
     if ((no_ro<=0) or (no_ro>inputAcq.data_shape[-1])): no_ro = inputAcq.data_shape[-1] #np
@@ -119,23 +119,23 @@ def gen_kspace_local(inputAcq,ircvr,nTRs=None):
     #    npe2 = 1
     #npe1 = inputAcq.data_shape[-2]
     if (inputAcq.platform=="Varian"):
-        print "Not setup for Varian acquisition..."
+        print("Not setup for Varian acquisition...")
         raise SystemExit
     elif (inputAcq.platform=="Bruker"): #force Bruker to artificial Varian format
         nf = nTRs 
         nreps = rgf.get_dict_value(inputAcq.method_param_dict,"PVM_NRepetitions",1)
     else:
-        print "Input format not recognized."
+        print("Input format not recognized.")
     raw_imgdata = zeros((nreps,1,nf,no_ro),complex)
     for k in range(nreps):
-        print "%d / %d" % (k,nreps)
+        print("%d / %d" % (k,nreps))
         fid_start = k*nf
         fid_end = (k+1)*nf
         fid_data,data_error = inputAcq.getdatafids(fid_start,fid_end,rcvrnum=ircvr)
         raw_imgdata[k,0,:,:] = fid_data[:,-no_ro:]
         if (data_error):
             data_fraction = float(data_error+fid_start)/float(nf*nreps)
-            print 'Error at %f%% through data set' % (100.0*data_fraction)
+            print('Error at %f%% through data set' % (100.0*data_fraction))
             break
     return raw_imgdata
 

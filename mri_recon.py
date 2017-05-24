@@ -110,7 +110,7 @@ def generate_option_parser_and_seq_module(recontypestring=None):
             f,filename,description = imp.find_module(seqmodname,seqdir)
         seqmodule = imp.load_module('seqmodule',f,filename,description)
     except ImportError:
-        print "Could not import %s recon module"%recontypestring
+        print("Could not import %s recon module"%recontypestring)
         f,filename,description = imp.find_module(DEFAULT_RECON_TYPE)
         seqmodule = imp.load_module('seqmodule',f,filename,description)
     seqmodule.seq_specific_options(parser)
@@ -131,15 +131,13 @@ if __name__ == '__main__':
 
     try:
         if not options.clobber and glob.glob(outputfile[:-4]+'*'): #os.path.exists(outputfile):
-            raise FatalError, \
-               "The --clobber option is needed to overwrite an existing file."
+            raise FatalError("The --clobber option is needed to overwrite an existing file.")
 
         if not os.path.exists(inputdirectory):
-            raise FatalError, \
-               "Cannot locate input directory."
+            raise FatalError("Cannot locate input directory.")
 
-    except FatalError, e:
-        print 'Error(%s):' % program_name, e.msg
+    except FatalError as e:
+        print('Error(%s):' % program_name, e.msg)
         raise SystemExit
 
     cmdstr = "renice 15 %d" % os.getpid()
@@ -157,7 +155,7 @@ if __name__ == '__main__':
                                          acqp_name=options.acqp_file_name,
                                          fid_name=options.fid_file_name)
     else:
-        print 'Error: did not recognize input directory as Varian or Bruker format.'
+        print('Error: did not recognize input directory as Varian or Bruker format.')
         raise SystemExit
 
     #initialize seq specific data

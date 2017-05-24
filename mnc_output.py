@@ -1,5 +1,5 @@
 import numpy as N
-from py_minc import *
+#from py_minc import *
 import imp
 #from sys import path
 #path.insert(0,"/axiom2/projects/software/arch/linux-precise/python/pyminc-0.41-py2.7.egg")
@@ -35,7 +35,7 @@ def Eulermat(psi,phi,theta):
 #    os.system(cmdstr)
    
 def add_scanparams_to_mncheader(inputAcq,filename,imouse):
-    print "Adding scan header to minc header..."
+    print("Adding scan header to minc header...")
     nmice = inputAcq.nmice
     if (inputAcq.platform=="Varian"):
         dparamlist=['sw','tr','np','nv','nv2','nv_lores','nv2_lores','ni','nf','ne','etl','lro','lpe','lpe2',
@@ -88,7 +88,7 @@ def write_to_mnc_file(filename,data,inputAcq,options,manstarts=None,mansteps=Non
     elif options.phase:
         out_im=N.arctan2(data.imag,data.real); vType=[options.vType,"short"][options.vType==None]
     elif (nrcvrs_per_mouse>1):
-        print "Sum of squares reconstruction on multiple coils..."
+        print("Sum of squares reconstruction on multiple coils...")
         if ((inputAcq.nD==3) or ((inputAcq.nD==2) and (inputAcq.nslices>1))):
             rcvraxis=-4
         elif ((inputAcq.nD==2) and (inputAcq.nslices==1)):
@@ -182,7 +182,7 @@ def write_to_mnc_file(filename,data,inputAcq,options,manstarts=None,mansteps=Non
                     N.sign(step_list[2])*mm_pro[imouse]-step_list[2]*(0.5*dim_sizes[-1]-0.5),
                     0,0]        
     else:
-        print "Platform not recognized as Varian or Bruker"
+        print("Platform not recognized as Varian or Bruker")
     if (options.fft2d):
         #loop order: slice,pe1,ro
         if (inputAcq.platform=="Varian"):
@@ -202,7 +202,7 @@ def write_to_mnc_file(filename,data,inputAcq,options,manstarts=None,mansteps=Non
         start_list=[startpe2,-dim_sizes[-2]/fov_pe,-dim_sizes[-1]/fov_ro]
     #intensity scaling
     if (options.image_range_max-options.image_range_min>1e-4):
-        print "Using user-input intensity range..."
+        print("Using user-input intensity range...")
         (Imin,Imax) = (options.image_range_min,options.image_range_max)
         for j in range(dim_sizes[0]):
             out_im[j] = N.where(N.greater(out_im[j],options.image_range_max),options.image_range_max,out_im[j]).astype(float)
@@ -233,32 +233,20 @@ def write_to_mnc_file(filename,data,inputAcq,options,manstarts=None,mansteps=Non
         else:
             outfile_name = filename[:-4] + '_' + str(j) + '.mnc'
             imgshape = dim_sizes[1:]
-        print "Writing to output file %s..." % outfile_name
+        print("Writing to output file %s..." % outfile_name)
         #minc1 or minc2 output    
         if (mincversion!=2):
-            mnc_vol = Volume(tuple(imgshape), \
-                             dimension_names=tuple(dim_names), \
-                             nc_data_type=NC_FLOAT)
-            mnc_vol.set_starts(tuple(start_list[0:nD]))
-            mnc_vol.set_separations(tuple(step_list[0:nD]))
-            mnc_vol.set_space_type('native____')
-            if (nout_files==1):
-                mnc_vol.set_hyperslab(N.zeros(nD,int),out_im)
-            else:
-                mnc_vol.set_hyperslab(N.zeros(nD,int),out_im[j])
-            mnc_vol.set_range(Imin,Imax)
-            mnc_vol.output(outfile_name,
-                           history='>>> %s: %s' % (ctime(time()), string.join(argv)))
+            print("Sorry, minc1 isn't an option.")
+
+        spatDim = 3
+        #print outfile_name,dim_names,imgshape,tuple(start_list[0:spatDim]),tuple(step_list[0:spatDim]),vType,out_im.dtype,out_im.shape
+        mnc_vol = volumeFromDescription(outfile_name,dim_names,imgshape,tuple(start_list[0:spatDim]),tuple(step_list[0:spatDim]),volumeType=vType,dtype=out_im.dtype)
+        if (nout_files==1):
+            mnc_vol.setdata(out_im)
         else:
-            spatDim = 3
-            #print outfile_name,dim_names,imgshape,tuple(start_list[0:spatDim]),tuple(step_list[0:spatDim]),vType,out_im.dtype,out_im.shape
-            mnc_vol = volumeFromDescription(outfile_name,dim_names,imgshape,tuple(start_list[0:spatDim]),tuple(step_list[0:spatDim]),volumeType=vType,dtype=out_im.dtype)
-            if (nout_files==1):
-                mnc_vol.setdata(out_im)
-            else:
-                mnc_vol.setdata(out_im[j])
-            mnc_vol.writeFile()
-            mnc_vol.closeVolume()
+            mnc_vol.setdata(out_im[j])
+        mnc_vol.writeFile()
+        mnc_vol.closeVolume()
         #add scan params to mnc header
         add_scanparams_to_mncheader(inputAcq,outfile_name,imouse)
     return nout_files

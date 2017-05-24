@@ -42,7 +42,7 @@ def seq_specific_options(parser):
 class seq_reconstruction():
     def __init__(self,inputAcq,options,outputfile,noshift_ppe=True,noshift_ppe2=False):
         if (inputAcq.platform!="Varian"):
-            print "fse3dmice_recon is for Varian acquisitions only!!"
+            print("fse3dmice_recon is for Varian acquisitions only!!")
             raise SystemExit
         self.options = options
         self.inputAcq = inputAcq
@@ -71,7 +71,7 @@ class seq_reconstruction():
         if (self.inputAcq.platform=="Varian"):
             phasecorrAcq = vrf.VarianAcquisition(self.options.phasecorr_data)
         else:
-            print "Not ready for Bruker acquisition..."
+            print("Not ready for Bruker acquisition...")
         #fetch fid data from phase correction
         phase_fid_data = read_correction_fid(phasecorrAcq)
 
@@ -262,7 +262,7 @@ def split_kspace(inputAcq,kspace,petable_name,imouse,options):
     kspace1 = petable_orderedpair_reordering(kspace[0:kspace.shape[-3]/2,:,:],('t1','t2'),petable_name=petable_name,matrix=(nv,nv2), 
                                              index_start=0,index_end=(kspace.shape[-2]*kspace.shape[-3]/2))   
     kspace1 = fov_adjustment(kspace1,options,inputAcq,imouse)
-    print "Not performing ppe FOV adjustment"
+    print("Not performing ppe FOV adjustment")
     kspace2 = petable_orderedpair_reordering(kspace[kspace.shape[-3]/2:kspace.shape[-3],:,:],('t1','t2'),petable_name=petable_name,matrix=(nv,nv2),  
                                              index_start=(kspace.shape[-2]*(kspace.shape[-3]/2)),index_end=(kspace.shape[-2]*kspace.shape[-3]))  
     kspace2 = fov_adjustment(kspace2,options,inputAcq,imouse)
