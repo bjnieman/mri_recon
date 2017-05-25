@@ -12,14 +12,14 @@ from scipy.interpolate import LSQUnivariateSpline
 import collections
 
 def get_sg_data(inputAcq,imouse):
-    print "Retrieving self-gate data..."
+    print("Retrieving self-gate data...")
     sgpts = get_dict_value(inputAcq.param_dict,'np',1)/2-get_dict_value(inputAcq.param_dict,'nro',1)
     if (sgpts<1): return 0
-    sg_fids,data_error = inputAcq.getdatafids(0,product(inputAcq.data_shape[0:-1])/inputAcq.nrcvrs,rcvrnum=imouse,nrcvrs=nrcvrs,startpt=0,endpt=sgpts)
+    sg_fids,data_error = inputAcq.getdatafids(0,product(inputAcq.data_shape[0:-1])/inputAcq.nrcvrs,rcvrnum=imouse,nrcvrs=inputAcq.nrcvrs,startpt=0,endpt=sgpts)
     return sg_fids
 
 def self_resp_gate(navdata,tr,resp_dur):
-    print "Generating respiratory gates from self-gated FIDs..."
+    print("Generating respiratory gates from self-gated FIDs...")
     compi=N.array((0.+1.j),N.complex)
     sizes = N.shape(navdata)
     ref_base = N.zeros(sizes,N.complex)
@@ -54,7 +54,7 @@ def self_resp_gate(navdata,tr,resp_dur):
     quiet_cutoff = binloc[ N.maximum.reduce(N.nonzero( N.greater(binfreq,max_freq/8) )[0]) ] 
     if (quiet_cutoff<2*testfig_mode): 
         quiet_cutoff=2*testfig_mode
-    print quiet_cutoff
+    print(quiet_cutoff)
     resp_gate_sig = N.less(resp_sig,quiet_cutoff)
     resp_gate_sig_orig = resp_gate_sig.copy()
     medfiltwindow = 2*(int(resp_dur/tr))+1
@@ -62,7 +62,7 @@ def self_resp_gate(navdata,tr,resp_dur):
     return resp_gate_sig,resp_sig
 
 def gen_kspace_sg(inputAcq,resp_gate_sig,resp_sig,mousenum,gate_resp=True):
-    print "Generating gated k-space data..."
+    print("Generating gated k-space data...")
     no_ro = inputAcq.data_shape[-1]
     if (get_dict_value(inputAcq.param_dict,'sgflag','n')=='y'):
         no_ro = get_dict_value(inputAcq.param_dict,'nro',0)
@@ -85,9 +85,9 @@ def gen_kspace_sg(inputAcq,resp_gate_sig,resp_sig,mousenum,gate_resp=True):
     traces_per_slowpe = n_fastpe*no_inner_loop*no_middle_loop
     traces_per_fastpe = no_inner_loop
     #timing for echo locations
-    sgpts = data_shape[-1]-get_dict_value(param_dict,'nro',1)
+    sgpts = inputAcq.data_shape[-1]-get_dict_value(inputAcq.param_dict,'nro',1)
     start_pt = sgpts
-    end_pt = data_shape[-1]
+    end_pt = inputAcq.data_shape[-1]
     nacq_pts = end_pt-start_pt
     if (nechoes>1): #need to get this setup so that it finds or reads pts automatically
         #start_pt=[194,895]; end_pt=[578,1279]; nacq_pts=[384,384];
@@ -97,8 +97,8 @@ def gen_kspace_sg(inputAcq,resp_gate_sig,resp_sig,mousenum,gate_resp=True):
     #nacq_pts = int(0.45+no_ro*fracacqwindow/imgacqwindow)
     #end_pt = int(start_pt + ro_oversample*nacq_pts) #(echotimes+acqwindow/2.0)*sw*1e-3*ro_oversample
     for j in range(n_slowpe):
-        print "%d / %d" % (j,n_slowpe)
-        fid_data = zeros((traces_per_slowpe*no_outer_loop,data_shape[-1]),complex)
+        print("%d / %d" % (j,n_slowpe))
+        fid_data = zeros((traces_per_slowpe*no_outer_loop,inputAcq.data_shape[-1]),complex)
         resp_flag = zeros((traces_per_slowpe*no_outer_loop,),float)
         resp_curr_sig = zeros((traces_per_slowpe*no_outer_loop,),float)
         for k in range(no_outer_loop): #range(no_outer_loop)
@@ -107,7 +107,7 @@ def gen_kspace_sg(inputAcq,resp_gate_sig,resp_sig,mousenum,gate_resp=True):
             fid_data_temp,data_error = inputAcq.getdatafids(fid_start,fid_end,rcvrnum=mousenum)
             if (data_error):
                 data_fraction = float(j)/float(n_slowpe)
-                print 'Error at %f%% through data set' % (100.0*data_fraction)
+                print('Error at %f%% through data set' % (100.0*data_fraction))
                 break
             fid_data[k*traces_per_slowpe:(k+1)*traces_per_slowpe,:]=fid_data_temp
             if (gate_resp):
@@ -115,14 +115,14 @@ def gen_kspace_sg(inputAcq,resp_gate_sig,resp_sig,mousenum,gate_resp=True):
                 resp_curr_sig[k*traces_per_slowpe:(k+1)*traces_per_slowpe] = resp_sig[fid_start:fid_end].astype(N.float)
             else:
                 resp_flag[k*traces_per_slowpe:(k+1)*traces_per_slowpe] = N.ones((traces_per_slowpe,),N.float)
-        fid_shape = (no_outer_loop*no_middle_loop,n_fastpe,traces_per_fastpe,data_shape[-1])
+        fid_shape = (no_outer_loop*no_middle_loop,n_fastpe,traces_per_fastpe,inputAcq.data_shape[-1])
         resp_flag = N.reshape(resp_flag,fid_shape[:-1])
         resp_curr_sig = N.reshape(resp_curr_sig,fid_shape[:-1])
         fid_data = N.reshape(fid_data,fid_shape)
         norm_val = N.sum(N.sum(resp_flag,axis=0),axis=1)
         zero_inds = N.nonzero(norm_val==0)[0]
         for index in zero_inds:
-            print "|"
+            print("|")
             best_index = argmin(ravel(resp_curr_sig[:,index,:]))
             resp_flag[ best_index/traces_per_fastpe ,index, best_index%traces_per_fastpe ] = 1        
         norm_val = N.sum(N.sum(resp_flag,axis=0),axis=1)
@@ -143,7 +143,7 @@ def gen_kspace_sg(inputAcq,resp_gate_sig,resp_sig,mousenum,gate_resp=True):
 def gen_kspace_sg_orderedpairtable(inputAcq,resp_gate_sig,resp_sig,mousenum,gate_resp=True,
                                    petable=None,petable_arrays=('t1','t2'),grappafov=1,kpts_offset=0,outputreps=False,
                                    phasecorr=None,dcpl_info=None):
-    print "Generating gated k-space data..."
+    print("Generating gated k-space data...")
     no_ro = inputAcq.data_shape[-1]
     if (get_dict_value(inputAcq.param_dict,'sgflag','n')=='y'):
         no_ro = get_dict_value(inputAcq.param_dict,'nro',0)
@@ -168,22 +168,22 @@ def gen_kspace_sg_orderedpairtable(inputAcq,resp_gate_sig,resp_sig,mousenum,gate
         raw_imgdata = N.zeros((nv2,nv,no_ro),N.complex)
     #timing for echo locations needs to be improved
     if (dcpl_info==None):
-        start_pt = [data_shape[-1]-no_ro]
-        end_pt = [data_shape[-1]]
+        start_pt = [inputAcq.data_shape[-1]-no_ro]
+        end_pt = [inputAcq.data_shape[-1]]
     else:
         start_pt = [dcpl_info.rok0index-no_ro/2] #[0]
         end_pt = [start_pt+no_ro] #[no_ro]
     nacq_pts = [end_pt[0]-start_pt[0]]
     if (nechoes>1): #need to get this setup so that it finds or reads pts automatically
         #start_pt=[194,895]; end_pt=[578,1279]; nacq_pts=[384,384];
-        print 'Warning: echo timing needs to be setup properly...'
+        print('Warning: echo timing needs to be setup properly...')
         start_pt=[61,405]; end_pt=[317,661]; nacq_pts=[256,256]; #[68,426] [324,682] [256,256]
     nrcvrs = inputAcq.nrcvrs
     #start_pt = int(0.5 + start_time*sw*1e-3*ro_oversample)
     #nacq_pts = int(0.45+no_ro*fracacqwindow/imgacqwindow)
     #end_pt = int(start_pt + ro_oversample*nacq_pts) #(echotimes+acqwindow/2.0)*sw*1e-3*ro_oversample
     for j in range(nv2): 
-        print "%d / %d" % (j,nv2)
+        print("%d / %d" % (j,nv2))
         for k in range(nv): 
             fidinds = N.nonzero( (t2array==((j-nv2/2+1)*grappafov+kpts_offset))&
                                  (t1array==((k-nv/2+1)*grappafov+kpts_offset)) )[0]
@@ -203,7 +203,7 @@ def gen_kspace_sg_orderedpairtable(inputAcq,resp_gate_sig,resp_sig,mousenum,gate
                 resp_flag = N.ones((nreps,),bool)
             norm_val = N.sum(resp_flag)
             if (norm_val==0):
-                print "|"
+                print("|")
                 best_index = argmin(resp_curr_sig)
                 resp_flag[ best_index ] = 1        
                 norm_val = 1
