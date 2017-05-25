@@ -8,7 +8,7 @@
 
 
 from optparse import OptionParser, Option, OptionValueError, OptionGroup
-import imp
+import importlib
 import sys
 import os
 import re
@@ -105,14 +105,21 @@ def generate_option_parser_and_seq_module(recontypestring=None):
         seqmodname=os.path.basename(recontypestring)
         seqdir=[[os.path.dirname(recontypestring)],None][os.path.dirname(recontypestring)=='']
         if seqdir is None:
-            f,filename,description = imp.find_module(seqmodname)
+            seqmod_specs = importlib.util.find_spec(seqmodname)
         else:
-            f,filename,description = imp.find_module(seqmodname,seqdir)
-        seqmodule = imp.load_module('seqmodule',f,filename,description)
+            loader_details = (importlib.machinery.ExtensionFileLoader,importlib.machinery.EXTENSION_SUFFIXES)
+            modfinder = importlib.machinery.FileFinder(seqdir, loader_details)
+            seqmod_specs = modfinder.find_spec(seqmodname)
+        seqmodule = importlib.util.module_from_spec(seqmod_specs)
+        print(seqmodule)
+        seqmod_specs.loader.exec_module(seqmodule)
     except ImportError:
         print("Could not import %s recon module"%recontypestring)
-        f,filename,description = imp.find_module(DEFAULT_RECON_TYPE)
-        seqmodule = imp.load_module('seqmodule',f,filename,description)
+        seqmod_specs = importlib.util.find_spec(DEFAULT_RECON_TYPE)
+        seqmodule = importlib.util.module_from_spec(seqmod_specs)
+        seqmod_specs.loader.exec_module(seqmodule)
+        #f,filename,description = imp.find_module(DEFAULT_RECON_TYPE)
+        #seqmodule = imp.load_module('seqmodule',f,filename,description)
     seqmodule.seq_specific_options(parser)
     #return options parser and seqmodule
     return parser,seqmodule
