@@ -42,8 +42,8 @@ class VarianAcquisition():
         except FatalError as e:
             print('Error(%s):' % 'open_vnmrfid_file', e.msg)
             raise SystemExit
-        self.fidfilelist = [open(fid_file_list[j],'r') for j in range(self.nfid)]
-        self.header_tuple = struct.unpack('>iiiiiihhi',self.fidfilelist[0].read(32)) 
+        self.fidfilelist = [open(fid_file_list[j],'r','latin-1') for j in range(self.nfid)]
+        self.header_tuple = struct.unpack('>iiiiiihhi',bytes(self.fidfilelist[0].read(32),'latin-1'))
         #(nblocks,ntraces,np,ebytes,tbytes,bbytes,vers_id,status,nbheaders)
         bstr_nonneg = lambda n: n>0 and bstr_nonneg(n>>1).lstrip('0')+str(n&1) or '0'
         status_bits = bstr_nonneg(self.header_tuple[7])
@@ -164,7 +164,7 @@ def generate_procpar_dict(procpar_file):
 
 def get_dict_value(param_dict,key,default):
     retvalue=default
-    if param_dict.has_key(key):
+    if key in param_dict:
         retvalue=param_dict[key]
     return retvalue
     
