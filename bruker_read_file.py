@@ -99,7 +99,7 @@ class BrukerAcquisition():
         #blocksize may be padded with zeroes depending on setting of GO_block_size
         base_blocksize=self.nrcvrs*self.nro*2*sizeof(self.datatype)
         if ((self.acq_param_dict["GO_block_size"]=="Standard_KBlock_Format") and not (fid_name[0:11]=="rawdata.job")): #temporary kluge, rawdata.jobN files don't follow KBlock format as fid files do
-            self.blocksize=1024*( base_blocksize/1024 )
+            self.blocksize=1024*( base_blocksize//1024 )
             if ((base_blocksize%1024)>0): self.blocksize+=1024
         else:
             self.blocksize=base_blocksize

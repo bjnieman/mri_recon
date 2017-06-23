@@ -23,7 +23,7 @@ class FatalError(Exception):
 
 def get_dict_value(image_param_dict,key,default):
     retvalue=default
-    if image_param_dict.has_key(key):
+    if key in image_param_dict:
         retvalue=image_param_dict[key]
     return retvalue
 

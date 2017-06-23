@@ -94,12 +94,12 @@ class seq_reconstruction():
         if any((t1_array[1::etl]!=0)&(t2_array[1::etl]!=0)):
             print('PE table format appears to be wrong...should have zeros on echo 2!!')
         #parse zeros from table
-        ifid,itrain = nonzero( all( (reshape(t1_array,(nfid,ni_perchan*(nf/etl)/nfid,nf))==0)*
-                                    (reshape(t2_array,(nfid,ni_perchan*(nf/etl)/nfid,nf))==0) ,axis=-1) )   
+        ifid,itrain = nonzero( all( (reshape(t1_array,(nfid,ni_perchan*(nf//etl)//nfid,nf))==0)*
+                                    (reshape(t2_array,(nfid,ni_perchan*(nf//etl)//nfid,nf))==0) ,axis=-1) )
         #"moments" from table
         M = moment_terms_from_petable(t1_array,t2_array,etl)
-        M.shape = (M.shape[0],nfid,ni_perchan*(nf/etl)/nfid,etl)
-        phase_fid_data.shape=(nfid,phase_fid_data.shape[1],ni_perchan*(nf/etl)/nfid,etl,phase_fid_data.shape[-1])
+        M.shape = (M.shape[0],nfid,ni_perchan*(nf//etl)//nfid,etl)
+        phase_fid_data.shape=(nfid,phase_fid_data.shape[1],ni_perchan*(nf//etl)//nfid,etl,phase_fid_data.shape[-1])
         #generate read shifts
         for imouse in range(phase_fid_data.shape[1]):
             self.maxroind = int( argmax(abs(mean( phase_fid_data[ifid,imouse,itrain,1,:] ,axis=0))) )
@@ -130,8 +130,8 @@ class seq_reconstruction():
         #generate image moments to multiply with pMfit values
         M2 = moment_terms_from_petable(t1_array,t2_array,etl)
         #read in image k-space data
-        kspace = zeros((nf*ni_perchan/etl,etl,nro),complex)
-        for k in range(nf*ni_perchan/etl):
+        kspace = zeros((nf*ni_perchan//etl,etl,nro),complex)
+        for k in range(nf*ni_perchan//etl):
             fid_data,data_error = self.inputAcq.getdatafids(k*etl,(k+1)*etl,rcvrnum=imouse)
             kspace[k,:,:] = fid_data.copy()
         #apply read correction
@@ -164,7 +164,7 @@ class seq_reconstruction():
 ###################### phase correction from short phasecorr experiment ########################################
 
 def moment_terms_from_petable(t1_array,t2_array,etl):   
-    trs_per_table = len(t1_array)/etl
+    trs_per_table = len(t1_array)//etl
     M = zeros((5,trs_per_table,etl),int)
     for k in range(trs_per_table): 
         cph = array((0,0,0,0,0),int)
@@ -181,14 +181,14 @@ def moment_terms_from_petable(t1_array,t2_array,etl):
 
 #  get procpar parameters from phase correction petable        
 def read_correction_fid(inputAcq):
-    nro = int(vrf.get_dict_value(inputAcq.param_dict,'np',1))/2
+    nro = int(vrf.get_dict_value(inputAcq.param_dict,'np',1)/2)
     etl = int(vrf.get_dict_value(inputAcq.param_dict,'etl',1))
     ni_perchan = inputAcq.ni*inputAcq.nfid
     raw_data = zeros((inputAcq.nfid,inputAcq.nmice,ni_perchan*(inputAcq.nf/etl)/inputAcq.nfid,inputAcq.nf,nro),complex) 
     for imouse in range (inputAcq.nmice):
-        for j in range((ni_perchan*(inputAcq.nf/etl))):
+        for j in range((ni_perchan*(inputAcq.nf//etl))):
             fid_data,data_error = inputAcq.getdatafids(j*inputAcq.nf,(j+1)*inputAcq.nf,rcvrnum=imouse)
-            raw_data[j/(ni_perchan*(inputAcq.nf/etl)/inputAcq.nfid),imouse,j%(ni_perchan*(inputAcq.nf/etl)/inputAcq.nfid),:,:] = fid_data[:,:].copy()
+            raw_data[j//(ni_perchan*(inputAcq.nf//etl)//inputAcq.nfid),imouse,j%(ni_perchan*(inputAcq.nf//etl)//inputAcq.nfid),:,:] = fid_data[:,:].copy()
     return raw_data 
     
    
@@ -218,7 +218,7 @@ def ROshift(kline1,kline2,start=-2,stop=2,step=0.1):
 #readout shift calibration
 def apply_RO_shift(kline,pixel_shift):               
     nro=kline.shape[-1]
-    roramp = exp(1.j*2*pi*0.5*pixel_shift*(append(arange(nro/2),arange(-nro/2,0,1)))/nro)
+    roramp = exp(1.j*2*pi*0.5*pixel_shift*(append(arange(nro//2),arange(-nro/2,0,1)))/nro)
     # second: roramp = exp(1.j*arange(nro)*2*pi*pixel_shift/nro) 
     # first: roramp = exp(1.j*(arange(nro)-nro/2)*2*pi*pixel_shift/nro) 
     klinemod = ifft(((roramp)*fft(kline,axis=-1)),axis=-1)
@@ -259,12 +259,12 @@ def split_kspace(inputAcq,kspace,petable_name,imouse,options):
     nv2 = int(vrf.get_dict_value(inputAcq.param_dict,'nv2',504))
     t1 = vrf.parse_petable_file(petable_name,'t1')
     t2 = vrf.parse_petable_file(petable_name,'t2')
-    kspace1 = petable_orderedpair_reordering(kspace[0:kspace.shape[-3]/2,:,:],('t1','t2'),petable_name=petable_name,matrix=(nv,nv2), 
-                                             index_start=0,index_end=(kspace.shape[-2]*kspace.shape[-3]/2))   
+    kspace1 = petable_orderedpair_reordering(kspace[0:kspace.shape[-3]//2,:,:],('t1','t2'),petable_name=petable_name,matrix=(nv,nv2),
+                                             index_start=0,index_end=(kspace.shape[-2]*kspace.shape[-3]//2))
     kspace1 = fov_adjustment(kspace1,options,inputAcq,imouse)
     print("Not performing ppe FOV adjustment")
-    kspace2 = petable_orderedpair_reordering(kspace[kspace.shape[-3]/2:kspace.shape[-3],:,:],('t1','t2'),petable_name=petable_name,matrix=(nv,nv2),  
-                                             index_start=(kspace.shape[-2]*(kspace.shape[-3]/2)),index_end=(kspace.shape[-2]*kspace.shape[-3]))  
+    kspace2 = petable_orderedpair_reordering(kspace[kspace.shape[-3]//2:kspace.shape[-3],:,:],('t1','t2'),petable_name=petable_name,matrix=(nv,nv2),
+                                             index_start=(kspace.shape[-2]*(kspace.shape[-3]//2)),index_end=(kspace.shape[-2]*kspace.shape[-3]))
     kspace2 = fov_adjustment(kspace2,options,inputAcq,imouse)
     return kspace1,kspace2    
 
@@ -321,22 +321,22 @@ def Echo_shift_apply(kspace1,kspace2,petable_name,inputAcq,maxroind):
     nf = inputAcq.nf
     #defining petable1 petable2
     index1 = 0
-    index2 = t1_array_petable.shape[0]/2
+    index2 = t1_array_petable.shape[0]//2
     index3 = t1_array_petable.shape[0]
     t1_array_petable1 = t1_array_petable[index1:index2]
     t1_array_petable2 = t1_array_petable[index2:index3]
     t2_array_petable1 = t2_array_petable[index1:index2]
     t2_array_petable2 = t2_array_petable[index2:index3]
     petable1_pemat=zeros((nv2,nv),int)
-    petable1_pemat[t2_array_petable1+nv2/2-1,t1_array_petable1+nv/2-1]=1+arange(len(t1_array_petable1))%etl
+    petable1_pemat[t2_array_petable1+nv2//2-1,t1_array_petable1+nv//2-1]=1+arange(len(t1_array_petable1))%etl
     petable2_pemat=zeros((nv2,nv),int)
-    petable2_pemat[t2_array_petable2+nv2/2-1,t1_array_petable2+nv/2-1]=1+arange(len(t1_array_petable2))%etl
+    petable2_pemat[t2_array_petable2+nv2//2-1,t1_array_petable2+nv//2-1]=1+arange(len(t1_array_petable2))%etl
     del t1_array_petable1
     del t1_array_petable2
     del t2_array_petable1
     del t2_array_petable2
-    ROI1_centre = (petable1_pemat==petable1_pemat[nv2/2-1,nv/2-1])
-    ROI2_centre = (petable2_pemat==petable2_pemat[nv2/2-1,nv/2-1])  
+    ROI1_centre = (petable1_pemat==petable1_pemat[nv2//2-1,nv//2-1])
+    ROI2_centre = (petable2_pemat==petable2_pemat[nv2//2-1,nv//2-1])
     kspace1_centre = ROI1_centre[:,:,newaxis]*kspace1
     kspace2_centre = ROI2_centre[:,:,newaxis]*kspace2
     del ROI1_centre
@@ -345,8 +345,8 @@ def Echo_shift_apply(kspace1,kspace2,petable_name,inputAcq,maxroind):
     kspace2 = kspace2-kspace2_centre
     eopixshift_2 = Echo_shift((mean(kspace1_centre[:,:,maxroind-5:maxroind+5],axis=-1)),    
                      (mean(kspace2_centre[:,:,maxroind-5:maxroind+5],axis=-1)))
-    eoramp_2 = exp(-1.j*2*pi*0.5*eopixshift_2[0]*append(arange(nv2/2),arange(-nv2/2,0,1))/nv2)[:,newaxis]* \
-               exp(-1.j*2*pi*0.5*eopixshift_2[1]*append(arange(nv/2),arange(-nv/2,0,1))/nv)[newaxis,:]
+    eoramp_2 = exp(-1.j*2*pi*0.5*eopixshift_2[0]*append(arange(nv2//2),arange(-nv2//2,0,1))//nv2)[:,newaxis]* \
+               exp(-1.j*2*pi*0.5*eopixshift_2[1]*append(arange(nv//2),arange(-nv//2,0,1))//nv)[newaxis,:]
     for j in range(kspace1_centre.shape[2]):
         kspace1_centre[:,:,j] = ifft2(eoramp_2*fft2(kspace1_centre[:,:,j]))
         kspace2_centre[:,:,j] = ifft2(eoramp_2**(-1)*fft2(kspace2_centre[:,:,j])) 

@@ -42,8 +42,8 @@ class VarianAcquisition():
         except FatalError as e:
             print('Error(%s):' % 'open_vnmrfid_file', e.msg)
             raise SystemExit
-        self.fidfilelist = [open(fid_file_list[j],'r','latin-1') for j in range(self.nfid)]
-        self.header_tuple = struct.unpack('>iiiiiihhi',bytes(self.fidfilelist[0].read(32),'latin-1'))
+        self.fidfilelist = [open(fid_file_list[j],'br') for j in range(self.nfid)]
+        self.header_tuple = struct.unpack('>iiiiiihhi',self.fidfilelist[0].read(32))
         #(nblocks,ntraces,np,ebytes,tbytes,bbytes,vers_id,status,nbheaders)
         bstr_nonneg = lambda n: n>0 and bstr_nonneg(n>>1).lstrip('0')+str(n&1) or '0'
         status_bits = bstr_nonneg(self.header_tuple[7])
@@ -64,11 +64,11 @@ class VarianAcquisition():
         self.npe2=int(get_dict_value(param_dict,'nv2',1))
         if (self.npe2<=0): self.npe2=1
         self.nslices=int(get_dict_value(param_dict,'nslices',1))
-        self.nro=self.header_info[2]/2
+        self.nro=self.header_info[2]//2
         if (self.header_info[0]/(self.nmice*self.npe2)==1):
             self.data_shape=array((self.nmice,self.npe2,self.npe,self.nro),int)
         else:
-            self.data_shape=array((self.header_info[0]/(self.nmice*self.npe2),self.nmice,self.npe2,self.npe,self.nro),int)
+            self.data_shape=array((self.header_info[0]//(self.nmice*self.npe2),self.nmice,self.npe2,self.npe,self.nro),int)
         self.nf=int(get_dict_value(param_dict,'nf',self.npe))
         self.ni=int(get_dict_value(param_dict,'ni',self.npe2/self.nfid))
         if (self.ni<0): self.ni=1
@@ -83,40 +83,40 @@ class VarianAcquisition():
             mouse_num=0
         else:
             mouse_num = rcvrnum
-        nblocks = long(self.header_info[0])
-        ntraces = long(self.header_info[1])
+        nblocks = int(self.header_info[0])
+        ntraces = int(self.header_info[1])
         np = self.header_info[2]
-        tbytes = long(self.header_info[4])
-        bbytes = long(self.header_info[5])
+        tbytes = int(self.header_info[4])
+        bbytes = int(self.header_info[5])
         nbheaders = self.header_info[8]
         nfids=fid_end-fid_start
-        if (startpt<0): startpt = np/2-startpt
-        if (endpt<=0): endpt = np/2-endpt
+        if (startpt<0): startpt = np//2-startpt
+        if (endpt<=0): endpt = np//2-endpt
         if (endpt<startpt) or (endpt-startpt>np/2):
-            endpt = np/2; startpt = 0
-        npts = 2*(endpt - startpt)
-        data_elems = nfids*npts/2    
+            endpt = np//2; startpt = 0
+        npts = int(2*(endpt - startpt))
+        data_elems = int(nfids*(npts//2))
         data_error = 0
         complex_data = zeros((data_elems,),complex)
         for j in range(nfids):
             ifid = j+fid_start
-            filenum=ifid/(ntraces*nblocks/self.nrcvrs)
-            startblocknum=mouse_num+self.nrcvrs*((ifid-filenum*nblocks*ntraces/self.nrcvrs)/ntraces)
+            filenum=int(ifid/(ntraces*nblocks//self.nrcvrs))
+            startblocknum=int(mouse_num+self.nrcvrs*((ifid-(filenum*nblocks*ntraces//self.nrcvrs))//ntraces))
             starttracenum=ifid%ntraces
-            #print "get_vnmr_datafids: ",mouse_num,fid_start,fid_end,ifid,filenum,startblocknum,starttracenum,len(vnmrfidfilelist)
+            #print("get_vnmr_datafids: ",mouse_num,fid_start,fid_end,ifid,filenum,startblocknum,starttracenum)
             self.fidfilelist[filenum].seek(32+startblocknum*bbytes+28+starttracenum*tbytes+startpt*self.header_info[3]*2)
             bindata=A.array(self.header_info[7])
             try:
-                bindata.read(self.fidfilelist[filenum],npts)
+                bindata.fromfile(self.fidfilelist[filenum],npts)
                 bindata.byteswap()
             except EOFError:
                 print('Error(%s): Missing data in file!' % program_name)
-                print('        Trying to fetch %d fid in mouse %d (filenum %d, block %d, trace %d, nrcvrs %d)'%(ifid,mouse_num,filenum,startblocknum,starttracenum,nrcvrs))
+                print('        Trying to fetch %d fid in mouse %d (filenum %d, block %d, trace %d, nrcvrs %d)'%(ifid,mouse_num,filenum,startblocknum,starttracenum,self.nrcvrs))
                 data_error = True
                 break
             #complex_data[j*npts/2:(j+1)*npts/2]=array(bindata[0:npts:2],float16)+1.j*array(bindata[1:npts+1:2],float16)
-            complex_data[j*npts/2:(j+1)*npts/2]=array(bindata[0:npts:2],float)+1.j*array(bindata[1:npts+1:2],float)
-        data_shape = array((nfids,npts/2))
+            complex_data[int(j*(npts//2)):int((j+1)*(npts//2))]=array(bindata[0:npts:2],float)+1.j*array(bindata[1:npts+1:2],float)
+        data_shape = array((nfids,int(npts/2)))
         complex_data = reshape(complex_data,tuple(data_shape))
         return complex_data,data_error
     
@@ -244,11 +244,11 @@ def open_vnmrfid_file(inputpath,procpar_file=None):
     nv=get_dict_value(param_dict,'nv',1)
     nv2=get_dict_value(param_dict,'nv2',1)
     if (nv2<=0): nv2=1
-    nro=header_info[2]/2
+    nro=header_info[2]//2
     if (header_info[0]/(nmice*nv2)==1):
         data_shape=array((nmice,nv2,nv,nro),int)
     else:
-        data_shape=array((header_info[0]/(nmice*nv2),nmice,nv2,nv,nro),int)
+        data_shape=array((header_info[0]//(nmice*nv2),nmice,nv2,nv,nro),int)
     return vnmrfidfilelist,data_shape,header_info,param_dict,procpar_text_lines
 
 def close_vnmrfid_file(vnmrfidfilelist):
@@ -256,25 +256,25 @@ def close_vnmrfid_file(vnmrfidfilelist):
         fidfile.close()
 
 def get_vnmr_datafids(vnmrfidfilelist,fid_start,fid_end,header_info,mouse_num=0,nrcvrs=1,startpt=0,endpt=0):
-    nblocks = long(header_info[0])
-    ntraces = long(header_info[1])
+    nblocks = int(header_info[0])
+    ntraces = int(header_info[1])
     np = header_info[2]
-    tbytes = long(header_info[4])
-    bbytes = long(header_info[5])
+    tbytes = int(header_info[4])
+    bbytes = int(header_info[5])
     nbheaders = header_info[8]
     nfids=fid_end-fid_start
-    if (startpt<0): startpt = np/2-startpt
-    if (endpt<=0): endpt = np/2-endpt
+    if (startpt<0): startpt = np//2-startpt
+    if (endpt<=0): endpt = np//2-endpt
     if (endpt<startpt) or (endpt-startpt>np/2):
-        endpt = np/2; startpt = 0
+        endpt = np//2; startpt = 0
     npts = 2*(endpt - startpt)
-    data_elems = nfids*npts/2
+    data_elems = nfids*npts//2
     data_error = 0
     complex_data = zeros((data_elems,),complex)
     for j in range(nfids):
         ifid = j+fid_start
-        filenum=ifid/(ntraces*nblocks/nrcvrs)
-        startblocknum=mouse_num+nrcvrs*((ifid-filenum*nblocks*ntraces/nrcvrs)/ntraces)
+        filenum=ifid//(ntraces*nblocks//nrcvrs)
+        startblocknum=mouse_num+nrcvrs*((ifid-filenum*nblocks*ntraces//nrcvrs)//ntraces)
         starttracenum=ifid%ntraces
         #print "get_vnmr_datafids: ",mouse_num,fid_start,fid_end,ifid,filenum,startblocknum,starttracenum,len(vnmrfidfilelist)
         vnmrfidfilelist[filenum].seek(32+startblocknum*bbytes+28+starttracenum*tbytes+startpt*header_info[3]*2)
@@ -288,8 +288,8 @@ def get_vnmr_datafids(vnmrfidfilelist,fid_start,fid_end,header_info,mouse_num=0,
             data_error = True
             break
         #complex_data[j*npts/2:(j+1)*npts/2]=array(bindata[0:npts:2],float16)+1.j*array(bindata[1:npts+1:2],float16)
-        complex_data[j*npts/2:(j+1)*npts/2]=array(bindata[0:npts:2],float)+1.j*array(bindata[1:npts+1:2],float)
-    data_shape = array((nfids,npts/2))
+        complex_data[j*npts//2:(j+1)*npts//2]=array(bindata[0:npts:2],float)+1.j*array(bindata[1:npts+1:2],float)
+    data_shape = array((nfids,npts//2))
     complex_data = reshape(complex_data,tuple(data_shape))
     return complex_data,data_error
 

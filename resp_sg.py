@@ -155,11 +155,11 @@ def gen_kspace_sg_orderedpairtable(inputAcq,resp_gate_sig,resp_sig,mousenum,gate
         t1array = parse_petable_file(petable,petable_arrays[0])
         t2array = parse_petable_file(petable,petable_arrays[1])
     else:
-        t1array = (N.arange(nv*nv2)%nv)-nv/2+1
-        t2array = (N.arange(nv*nv2)/nv)-nv2/2+1
+        t1array = (N.arange(nv*nv2)%nv)-nv//2+1
+        t2array = (N.arange(nv*nv2)//nv)-nv2//2+1
     if (outputreps):
         gate_resp=False  #only makes sense to output reps without retrospective gating
-        noutreps = int( mode(array( collections.Counter(t1array+nv/2-1+nv*(t2array+nv2/2-1)).most_common() )[:,1])[0][0] )  #count from table rather than looking in procpar
+        noutreps = int( mode(array( collections.Counter(t1array+nv//2-1+nv*(t2array+nv2//2-1)).most_common() )[:,1])[0][0] )  #count from table rather than looking in procpar
     else:
         noutreps = 1
     if (nechoes*noutreps>1):
@@ -171,8 +171,11 @@ def gen_kspace_sg_orderedpairtable(inputAcq,resp_gate_sig,resp_sig,mousenum,gate
         start_pt = [inputAcq.data_shape[-1]-no_ro]
         end_pt = [inputAcq.data_shape[-1]]
     else:
-        start_pt = [dcpl_info.rok0index-no_ro/2] #[0]
-        end_pt = [start_pt+no_ro] #[no_ro]
+        start_pt = [dcpl_info.rok0index-no_ro//2] #[0]
+        end_pt= []
+        for this_start_pt in start_pt:
+            end_pt+=[this_start_pt + no_ro]
+
     nacq_pts = [end_pt[0]-start_pt[0]]
     if (nechoes>1): #need to get this setup so that it finds or reads pts automatically
         #start_pt=[194,895]; end_pt=[578,1279]; nacq_pts=[384,384];
@@ -185,8 +188,8 @@ def gen_kspace_sg_orderedpairtable(inputAcq,resp_gate_sig,resp_sig,mousenum,gate
     for j in range(nv2): 
         print("%d / %d" % (j,nv2))
         for k in range(nv): 
-            fidinds = N.nonzero( (t2array==((j-nv2/2+1)*grappafov+kpts_offset))&
-                                 (t1array==((k-nv/2+1)*grappafov+kpts_offset)) )[0]
+            fidinds = N.nonzero( (t2array==((j-nv2//2+1)*grappafov+kpts_offset))&
+                                 (t1array==((k-nv//2+1)*grappafov+kpts_offset)) )[0]
             #print "gen_kspace_sg_orderedpairtable: ",len(fidinds)
             if (len(fidinds)==0):
                 continue   
@@ -211,7 +214,7 @@ def gen_kspace_sg_orderedpairtable(inputAcq,resp_gate_sig,resp_sig,mousenum,gate
                 raw_imgdata[j,k,-nacq_pts[0]:] = N.sum( fid_data[:,start_pt[0]:end_pt[0]]*resp_flag[:,N.newaxis]   \
                                                        ,axis=0)/norm_val
             else:
-                repstep = nreps/noutreps
+                repstep = nreps//noutreps
                 rstarts = arange(noutreps)*repstep
                 rends = (1+arange(noutreps))*repstep; rends=where(rends==rstarts,rstarts+1,rends); rends[-1]=len(fidinds)
                 for cr in range(noutreps):

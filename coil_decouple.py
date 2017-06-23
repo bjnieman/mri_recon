@@ -10,7 +10,7 @@ from numpy.random import permutation
 def fetch_grappa4prof_data(inputAcq,petable,remove_ppeshift=True,dcplppeadj=None): 
     #retrieve and reconstruct 4 2D "grappa profiles" from fid file
     nmice = inputAcq.nmice
-    nacq = int(get_dict_value(inputAcq.param_dict,'np',1))/2
+    nacq = int(get_dict_value(inputAcq.param_dict,'np',1)/2)
     nro = int(get_dict_value(inputAcq.param_dict,'nro',1))
     nv = int(get_dict_value(inputAcq.param_dict,'nv',1))
     nv2 = int(get_dict_value(inputAcq.param_dict,'nv2',1))
@@ -26,7 +26,7 @@ def fetch_grappa4prof_data(inputAcq,petable,remove_ppeshift=True,dcplppeadj=None
         dcplppeadj = zeros((len(mm_ppe),),float)    
     #identify large fov data (even if not centred)
     pegrid = zeros((nv2*grappafov,nv*grappafov),int)
-    pegrid[t2_array+(nv2/2-1)*grappafov,t1_array+(nv/2-1)*grappafov] = 1
+    pegrid[t2_array+(int(nv2/2)-1)*grappafov,t1_array+(int(nv/2)-1)*grappafov] = 1
     fovmask = zeros(pegrid.shape,int)
     fovmask[1:-1,1:-1] = ((pegrid[0:-2,0:-2] + pegrid[1:-1,0:-2] + pegrid[2::,0:-2] + \
                            pegrid[0:-2,1:-1] + pegrid[1:-1,1:-1] + pegrid[2::,1:-1] + \
@@ -34,7 +34,7 @@ def fetch_grappa4prof_data(inputAcq,petable,remove_ppeshift=True,dcplppeadj=None
     i2,i1 = nonzero(fovmask)
     inds=array([],int)
     for j in range(len(i2)):
-        inds = append(inds,nonzero( ((t2_array+(nv2/2-1)*grappafov)==i2[j])&((t1_array+(nv/2-1)*grappafov)==i1[j]) )[0] ) 
+        inds = append(inds,nonzero( ((t2_array+(int(nv2/2)-1)*grappafov)==i2[j])&((t1_array+(int(nv/2)-1)*grappafov)==i1[j]) )[0] )
     grappapix = max(t2_array[inds])-min(t2_array[inds])+2
     grappapix = min(grappapix,max(t1_array[inds])-min(t1_array[inds])+2)                     
     raw_data = zeros((nmice,4,grappapix,nacq),complex)
@@ -69,7 +69,7 @@ def fetch_grappa4prof_data(inputAcq,petable,remove_ppeshift=True,dcplppeadj=None
     raw_data = raw_data/n_grabs[newaxis,:,:,newaxis]
     if (get_dict_value(inputAcq.param_dict,'sgflag','n')=='y'):
         maxind = raw_data.shape[-1]-nro+argmax(abs(raw_data[0,0,grappapix/2,-nro::]))
-        endpt = [maxind+nro/2,nacq-1][maxind+nro/2>=nacq]
+        endpt = [maxind+int(nro/2),nacq-1][maxind+int(nro/2)>=nacq]
         startpt = endpt-nro
     else:
         startpt = 0
@@ -150,7 +150,7 @@ def dcpl_axis_adjustment(profs,masks,cplgrps,nom_shift=10,axis=-1):
                 Arow[j] = cval; Arow[k] = -cval
                 A = append(A,Arow)
                 b = append(b,shift*cval)
-        A.shape = (len(b),len(A)/len(b))
+        A.shape = (len(b),int(len(A)/len(b)))
         rofitpos,resids,rank,s = lstsq(A,b)
         ropos[cgrp] = rofitpos
     #apply offsets

@@ -79,10 +79,10 @@ if __name__ == '__main__':
     i1=array((),int)
     i2=array((),int)
     if (options.interleave): #interleave
-        ntrstotal = len(i1list[0])*ntables/options.nf
+        ntrstotal = len(i1list[0])*ntables//options.nf
         for j in range(ntrstotal):
-            i1=append(i1,i1list[j%ntables][(j/ntables)*options.nf:(1+(j/ntables))*options.nf])
-            i2=append(i2,i2list[j%ntables][(j/ntables)*options.nf:(1+(j/ntables))*options.nf])
+            i1=append(i1,i1list[j%ntables][(j//ntables)*options.nf:(1+(j//ntables))*options.nf])
+            i2=append(i2,i2list[j%ntables][(j//ntables)*options.nf:(1+(j//ntables))*options.nf])
     else: #concatenate
         for j in range(ntables):
             i1=append(i1,i1list[j])

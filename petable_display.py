@@ -38,7 +38,7 @@ def display_petable(inputfile,etl=False,etl_lines=False,range_tuple=None):
         print('...using elements %d to %d for display'%(range_tuple[0],range_tuple[1]))
     Nt1 = len(t1list)
     if (len(t2list)==0):
-        nreps = Nt1/4
+        nreps = Nt1//4
         t2list = [0 for j in t1list]
         for j in range(nreps-1):
             for k in range(Nt1):
@@ -52,7 +52,7 @@ def display_petable(inputfile,etl=False,etl_lines=False,range_tuple=None):
     imshow(pemat,interpolation='nearest'); colorbar()
     if ((etl_lines) and (etl)):
         #default: show 5 across the image
-        for j in range(0,len(t1list)/etl,len(t1list)/(5*etl)):
+        for j in range(0,len(t1list)//etl,len(t1list)//(5*etl)):
             plot(t1list[j*etl+arange(etl)],t2list[j*etl+arange(etl)],'k-')
     show()
     return 0

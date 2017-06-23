@@ -26,10 +26,10 @@ class FatalError(Exception):
 #----------------------------------------------------------------------------
 
 def cyl_acq_mask(nv2,nv,grappafov=1,tabledisc=1,etl=None,checkerboard=0):
-    cartesian_distsqr = ((arange(0,nv2,grappafov)-nv2/2)/float(nv2/2))[:,newaxis]**2 + \
-                        ((arange(0,nv,grappafov)-nv/2)/float(nv/2))[newaxis,:]**2
+    cartesian_distsqr = ((arange(0,nv2,grappafov)-nv2//2)/float(nv2//2))[:,newaxis]**2 + \
+                        ((arange(0,nv,grappafov)-nv//2)/float(nv//2))[newaxis,:]**2
     if (checkerboard>0):
-        allinds=meshgrid(arange(0,nv,grappafov)-nv/2,arange(0,nv2,grappafov)-nv2/2)
+        allinds=meshgrid(arange(0,nv,grappafov)-nv//2,arange(0,nv2,grappafov)-nv2//2)
         gridtest = (allinds[0]%(2*grappafov) + allinds[1]%(2*grappafov))%(2*grappafov)
         moduloval = [0,grappafov][checkerboard-1]
         retval=nv*nv2 #just a number bigger than any of the others
@@ -38,12 +38,12 @@ def cyl_acq_mask(nv2,nv,grappafov=1,tabledisc=1,etl=None,checkerboard=0):
     else:
         ntotalpts=int( pi*nv*nv2/(4.0*grappafov**2) )
     if (ntotalpts>tabledisc):
-        ntotalpts=tabledisc*( (ntotalpts/tabledisc) + [0,1][(ntotalpts%tabledisc)>0] )
+        ntotalpts=tabledisc*( (ntotalpts//tabledisc) + [0,1][(ntotalpts%tabledisc)>0] )
     if not (etl is None):
         ntotalpts=etl*(ntotalpts/etl)
     cartesian_argsort = argsort(cartesian_distsqr.flat)[0:ntotalpts]
     acqmask = zeros((nv2,nv),bool)
-    acqmask[grappafov*(cartesian_argsort/(nv/grappafov)),grappafov*(cartesian_argsort%(nv/grappafov))] = 1
+    acqmask[grappafov*(cartesian_argsort//(nv//grappafov)),grappafov*(cartesian_argsort%(nv//grappafov))] = 1
     return acqmask
 
 def pseudocyl_acq_mask(nv2,nv,tabledisc=1,etl=6,checkerboard=0):
@@ -486,9 +486,9 @@ and reconstruction.
 
     #set the acquisition mask
     if (options.bruker):
-        w_tablimit = options.nf*(512**2/options.nf) #bruker table limit is 1e6?? set it to 512**2 here
+        w_tablimit = options.nf*(512**2//options.nf) #bruker table limit is 1e6?? set it to 512**2 here
     else:
-        w_tablimit = options.nf*(options.individ_table_limit/options.nf)
+        w_tablimit = options.nf*(options.individ_table_limit//options.nf)
     if ((options.pseudocyl) or (options.pseudocyl_pe2)):
         if (options.pseudocyl):
             acqmask = pseudocyl_acq_mask(matrix_pe2,

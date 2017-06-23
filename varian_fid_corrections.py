@@ -12,7 +12,7 @@ def phase_drift_corr(inputAcq,petable,imouse=None,petable_arrays=('t1','t2')):
         raise SystemExit
     print('Estimating smoothed phase drift correction...')
     #get repeated k0 grabs
-    nacq = int(get_dict_value(inputAcq.param_dict,'np',1))/2
+    nacq = int(get_dict_value(inputAcq.param_dict,'np',1)/2)
     nro = int(get_dict_value(inputAcq.param_dict,'nro',1))
     etl = int(get_dict_value(inputAcq.param_dict,'etl',1))
     nrcvrs = inputAcq.nrcvrs
@@ -32,7 +32,7 @@ def phase_drift_corr(inputAcq,petable,imouse=None,petable_arrays=('t1','t2')):
         mouselist = range(nmice)
     else:
         mouselist = [imouse]
-    k0_data = zeros((len(mouselist),len(i1),nacq),complex)
+    k0_data = zeros((len(mouselist), len(i1), nacq), complex)
     for k in range(len(mouselist)):
         for j in range(len(i1)):
             fid_data,data_error = inputAcq.getdatafids(i1[j],i1[j]+1,rcvrnum=k)
@@ -67,7 +67,7 @@ def get_corrected_datafids(inputAcq,fid_start,fid_end,mouse_num=0,phasecorr=None
         #start = dcpl_info.rok0index-dcpl_info.nro/2
         #end = start+dcpl_info.nro
         np = inputAcq.header_info[2]
-        fid_data = zeros((fid_end-fid_start,np/2),complex)  #dcpl_info.nro
+        fid_data = zeros((fid_end-fid_start,int(np/2)),complex)  #dcpl_info.nro
         for j in cgrp:
             cfid,data_error = inputAcq.getdatafids(fid_start,fid_end,rcvrnum=j)
             fid_data += cfid[:,:]* \

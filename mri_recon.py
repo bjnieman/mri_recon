@@ -111,7 +111,6 @@ def generate_option_parser_and_seq_module(recontypestring=None):
             modfinder = importlib.machinery.FileFinder(seqdir, loader_details)
             seqmod_specs = modfinder.find_spec(seqmodname)
         seqmodule = importlib.util.module_from_spec(seqmod_specs)
-        print(seqmodule)
         seqmod_specs.loader.exec_module(seqmodule)
     except ImportError:
         print("Could not import %s recon module"%recontypestring)
